@@ -10,7 +10,8 @@ const THEME_OPTIONS: { id: ThemeType; label: string; desc: string }[] = [
   { id: "MODERN", label: "Holograma", desc: "Cian, Cristal, Transparente" },
   { id: "AIRPLANE", label: "Aeropuerto", desc: "Clásico, LED Amarillos" },
   { id: "BUS", label: "Autobús (ADO)", desc: "Barra Roja, Limpio" },
-  { id: "METRO", label: "Metro", desc: "Barra Azul, Oscuro" }
+  { id: "METRO", label: "Metro", desc: "Barra Azul, Oscuro" },
+  { id: "DIGITAL", label: "Reloj Digital", desc: "Minimalista, LED Blanco" }
 ];
 
 export default function ThemeSelector() {

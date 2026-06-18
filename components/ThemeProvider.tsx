@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
-export type ThemeType = "BUS" | "METRO" | "MODERN" | "AIRPLANE";
+export type ThemeType = "BUS" | "METRO" | "MODERN" | "AIRPLANE" | "DIGITAL";
 
 interface ThemeConfig {
   background: string;
@@ -66,6 +66,18 @@ const THEMES: Record<ThemeType, ThemeConfig> = {
     textAccentSecondary: "text-orange-500",
     border: "border-[#222] border-2",
     font: "font-mono uppercase", 
+    glow: "",
+    accentGlow: ""
+  },
+  DIGITAL: {
+    background: "bg-black",
+    cardBg: "bg-[#050505]",
+    textPrimary: "text-white",
+    textSecondary: "text-gray-400",
+    textAccent: "text-white",
+    textAccentSecondary: "text-gray-300",
+    border: "border-gray-800 border",
+    font: "font-mono font-bold tracking-widest",
     glow: "",
     accentGlow: ""
   }

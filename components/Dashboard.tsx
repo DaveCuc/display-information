@@ -5,7 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Clock from "./Clock";
 import MainEventCard from "./MainEventCard";
 import SmallEventCard from "./SmallEventCard";
-import { RefreshCw, LogOut } from "lucide-react";
+import { RefreshCw, LogOut, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useSound from "use-sound";
 import { useTheme } from "./ThemeProvider";
@@ -28,7 +28,15 @@ export default function Dashboard() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isClockHidden, setIsClockHidden] = useState(false);
   const { theme, themeName } = useTheme();
+
+  // Reset clock visibility if theme changes from DIGITAL
+  useEffect(() => {
+    if (themeName !== "DIGITAL") {
+      setIsClockHidden(false);
+    }
+  }, [themeName]);
 
   // We assume the user will drop a chime.mp3 in public/sounds
   // If the file is not there, it simply won't play
@@ -211,8 +219,19 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-6xl mx-auto flex flex-col gap-8 md:gap-10 relative z-10">
-        <header className="mb-4">
-          <Clock />
+        <header className="mb-4 flex flex-col items-center relative">
+          {!isClockHidden && <Clock />}
+          
+          {/* Toggle Reloj solo para el tema DIGITAL */}
+          {themeName === "DIGITAL" && (
+            <button
+              onClick={() => setIsClockHidden(!isClockHidden)}
+              className={`absolute -right-4 md:right-0 top-1/2 -translate-y-1/2 p-3 rounded-full hover:bg-white/10 text-gray-500 hover:text-white transition-colors`}
+              title={isClockHidden ? "Mostrar reloj" : "Ocultar reloj"}
+            >
+              {isClockHidden ? <EyeOff size={24} /> : <Eye size={24} />}
+            </button>
+          )}
         </header>
 
         <main className="flex flex-col gap-6">
