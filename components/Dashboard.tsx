@@ -13,6 +13,8 @@ import ThemeSelector from "./ThemeSelector";
 import FloatingShapes from "./FloatingShapes";
 import { isToday, isTomorrow, format } from "date-fns";
 import { es } from "date-fns/locale";
+import SkeletonMainEventCard from "./SkeletonMainEventCard";
+import SkeletonSmallEventCard from "./SkeletonSmallEventCard";
 
 interface CalendarEvent {
   id: string;
@@ -74,7 +76,12 @@ export default function Dashboard() {
     if (status !== "authenticated") return;
     setLoading(true);
     try {
-      const res = await fetch("/api/calendar");
+      // Agregamos un retraso artificial de 2 segundos junto con la petición real
+      const fetchPromise = fetch(`/api/calendar?t=${new Date().getTime()}`);
+      const delayPromise = new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const [res] = await Promise.all([fetchPromise, delayPromise]);
+      
       if (res.ok) {
         setErrorMsg(null);
         const data = await res.json();
@@ -103,9 +110,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (status === "authenticated") {
       fetchEvents();
+      // Refrescar automáticamente cada hora (3600000 ms)
       const interval = setInterval(() => {
+        // En los refrescos de fondo NO borramos los eventos visualmente para evitar un parpadeo de 2s a los usuarios
+        // Solo ocurre de fondo, pero si se clica manual sí borra los eventos
         fetchEvents();
-      }, 60000); // 1 minuto
+      }, 3600000); // 1 hora
       return () => clearInterval(interval);
     }
   }, [status]);
@@ -275,7 +285,11 @@ export default function Dashboard() {
       {/* Top left controls */}
       <div className="absolute top-6 left-6 z-20">
         <button 
-          onClick={fetchEvents}
+          onClick={() => {
+            playCurrentSound();
+            setEvents([]); // Borramos los eventos para mostrar los Skeletons
+            fetchEvents();
+          }}
           disabled={loading}
           className={`p-4 ${theme.cardBg} ${theme.border} border-2 ${theme.textAccent} hover:${theme.textPrimary} rounded-full transition-all shadow-lg ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           title="Actualizar eventos manualmente"
@@ -327,7 +341,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto flex flex-col gap-8 md:gap-10 relative z-10">
+      <div className="w-full flex flex-col gap-8 md:gap-10 relative z-10">
         <header className="mb-4 flex flex-col items-center relative">
           {!isClockHidden && <Clock />}
           
@@ -353,6 +367,26 @@ export default function Dashboard() {
                 className="text-red-500 text-center text-xl font-bold py-10 border border-red-500/50 rounded-2xl bg-white/30 backdrop-blur-[40px] shadow-xl"
               >
                 Error: {errorMsg}
+              </motion.div>
+            )}
+
+            {events.length === 0 && loading && !errorMsg && (
+              <motion.div
+                key="skeletons"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="flex flex-col gap-6 w-full"
+              >
+                <SkeletonMainEventCard />
+                <motion.div 
+                   initial={{ scaleX: 0 }} 
+                   animate={{ scaleX: 1 }} 
+                   className="w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent my-2" 
+                />
+                {[1, 2, 3].map((_, idx) => (
+                  <SkeletonSmallEventCard key={`sk-${idx}`} index={idx} />
+                ))}
               </motion.div>
             )}
 

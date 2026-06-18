@@ -5,6 +5,8 @@ import { google } from "googleapis";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { es } from "date-fns/locale";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   try {
     const session: any = await getServerSession(authOptions);
