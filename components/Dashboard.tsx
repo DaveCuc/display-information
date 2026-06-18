@@ -137,6 +137,12 @@ export default function Dashboard() {
             </div>
           </motion.div>
         </div>
+        
+        {/* Footer Legal Links */}
+        <div className="absolute bottom-6 flex gap-6 text-sm text-slate-500 font-medium z-20">
+          <a href="/privacy" className="hover:text-cyan-600 transition-colors">Política de Privacidad</a>
+          <a href="/terms" className="hover:text-cyan-600 transition-colors">Condiciones de Servicio</a>
+        </div>
       </div>
     );
   }
