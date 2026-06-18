@@ -32,6 +32,9 @@ export default function Dashboard() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isClockHidden, setIsClockHidden] = useState(false);
   const { theme, themeName } = useTheme();
+  
+  // Ref para detectar cuando el evento principal cambia
+  const prevMainEventIdRef = useRef<string | null>(null);
 
   // Reset clock visibility if theme changes from DIGITAL
   useEffect(() => {
@@ -51,9 +54,21 @@ export default function Dashboard() {
       const res = await fetch("/api/calendar");
       if (res.ok) {
         const data = await res.json();
-        setEvents(data);
-        // Play sound when data successfully updates
-        playChime();
+        
+        // Filtramos estrictamente los eventos que suceden "hoy" según la zona horaria del usuario
+        const todayStr = new Date().toDateString();
+        const todaysEvents = data.filter((e: CalendarEvent) => {
+          const startStr = new Date(e.startTimeIso).toDateString();
+          return startStr === todayStr;
+        });
+
+        // Recalculamos isMain por si el primer evento de la lista general no era de hoy
+        const finalEvents = todaysEvents.map((e: CalendarEvent, i: number) => ({
+          ...e,
+          isMain: i === 0
+        }));
+
+        // Eliminado playChime de aquí, se maneja en un useEffect separado
       } else {
         console.error("Failed to fetch events");
       }
@@ -64,9 +79,32 @@ export default function Dashboard() {
     }
   };
 
+  // Efecto para auto-recargar cada minuto
   useEffect(() => {
-    fetchEvents();
+    if (status === "authenticated") {
+      fetchEvents();
+      const interval = setInterval(() => {
+        fetchEvents();
+      }, 60000); // 1 minuto
+      return () => clearInterval(interval);
+    }
   }, [status]);
+
+  // Efecto inteligente para tocar la campana SÓLO cuando cambia el evento principal
+  useEffect(() => {
+    const currentMainEvent = events.find((e) => e.isMain);
+    const currentId = currentMainEvent ? currentMainEvent.id : null;
+    
+    // Si ya teníamos un evento anterior, y el nuevo es distinto, tocamos la campana
+    if (prevMainEventIdRef.current !== null && currentId !== null && prevMainEventIdRef.current !== currentId) {
+      playChime();
+    }
+    
+    // Actualizamos la referencia
+    if (currentId !== null) {
+      prevMainEventIdRef.current = currentId;
+    }
+  }, [events, playChime]);
 
   if (status === "loading") {
     return <div className={`min-h-screen flex items-center justify-center text-3xl font-bold ${theme.textPrimary}`}>Cargando FIDS...</div>;
