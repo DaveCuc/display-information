@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Display Information",
   description: "Display Google Calendar events in an immersive format",
+  verification: {
+    google: "xBYMHyWihjQyiDMBdMgjL_FEC4DO8HV_TpdXquqggh0",
+  },
 };
 
 export default function RootLayout({
