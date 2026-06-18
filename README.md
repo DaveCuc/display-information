@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/DaveCuc/DaveCuc/blob/main/1a.png" width="80" alt="Logo" />
+  <img src="https://github.com/DaveCuc/DaveCuc/display-information/app/favicon.png" width="80" alt="Logo" />
 </p>
 
 <h1 align="center">Display Information (FIDS) ✈️🚉🚌</h1>
