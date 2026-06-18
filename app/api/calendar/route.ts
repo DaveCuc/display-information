@@ -5,24 +5,20 @@ import { google } from "googleapis";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { es } from "date-fns/locale";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session: any = await getServerSession(authOptions);
 
     if (!session || !session.accessToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const now = new Date();
+    // Pedir eventos de los próximos 7 días como estaba antes
+    const futureDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({ access_token: session.accessToken });
-
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-
-    const now = new Date();
-    // En Vercel el servidor está en UTC, por lo que calcular 'endOfDay' falla 
-    // dependiendo de la zona horaria del usuario. Es más seguro pedir los 
-    // eventos de los próximos 7 días para que nunca se quede vacío el tablero.
-    const futureDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     // 1. Fetch list of all calendars
     const calendarListRes = await calendar.calendarList.list();
@@ -61,20 +57,28 @@ export async function GET() {
       const bStart = new Date(b.start?.dateTime || b.start?.date || 0).getTime();
       return aStart - bStart;
     });
-
     // 4. Take the closest 15 events globally
     const topEvents = allEvents.slice(0, 15);
 
     // Formatear eventos para la UI
     const formattedEvents = topEvents.map((event: any, index) => {
-      const startDateTime = event.start?.dateTime || event.start?.date;
+      // Si es un evento de todo el día, Google envía solo 'date' (ej. 2026-06-18).
+      // Al hacer new Date("2026-06-18") JS lo toma como medianoche UTC, lo que
+      // causa que en zonas horarias como México (UTC-6) se atrase al día anterior.
+      // Solución: Forzar la hora a medio día (T12:00:00Z) asegura que siempre caiga en el día correcto en cualquier zona horaria.
+      let startDateTime = event.start?.dateTime;
+      if (!startDateTime && event.start?.date) {
+        startDateTime = `${event.start.date}T12:00:00Z`;
+      }
       const startDate = startDateTime ? new Date(startDateTime) : now;
       
-      const endDateTime = event.end?.dateTime || event.end?.date;
-      const endDate = endDateTime ? new Date(endDateTime) : new Date(startDate.getTime() + 3600000); // fallback to 1 hour after start
+      let endDateTime = event.end?.dateTime;
+      if (!endDateTime && event.end?.date) {
+        endDateTime = `${event.end.date}T12:00:00Z`;
+      }
+      const endDate = endDateTime ? new Date(endDateTime) : new Date(startDate.getTime() + 3600000);
       
-      
-      const isMain = index === 0; // El primero es el más próximo
+      const isMain = index === 0;
       
       let remainingTime = "";
       if (isMain) {

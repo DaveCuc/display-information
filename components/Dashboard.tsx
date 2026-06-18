@@ -5,12 +5,14 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Clock from "./Clock";
 import MainEventCard from "./MainEventCard";
 import SmallEventCard from "./SmallEventCard";
-import { RefreshCw, LogOut, Eye, EyeOff } from "lucide-react";
+import { RefreshCw, LogOut, Eye, EyeOff, Music } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useSound from "use-sound";
 import { useTheme } from "./ThemeProvider";
 import ThemeSelector from "./ThemeSelector";
 import FloatingShapes from "./FloatingShapes";
+import { isToday, isTomorrow, format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface CalendarEvent {
   id: string;
@@ -29,6 +31,7 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isClockHidden, setIsClockHidden] = useState(false);
   const { theme, themeName } = useTheme();
@@ -43,9 +46,29 @@ export default function Dashboard() {
     }
   }, [themeName]);
 
-  // We assume the user will drop a chime.mp3 in public/sounds
-  // If the file is not there, it simply won't play
-  const [playChime] = useSound("/sounds/chime.mp3", { volume: 0.5 });
+  const [selectedSound, setSelectedSound] = useState<"notification" | "chord" | "none">("notification");
+  const [isSoundMenuOpen, setIsSoundMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const savedSound = localStorage.getItem("fids-sound");
+    if (savedSound) setSelectedSound(savedSound as any);
+  }, []);
+
+  const [playNotification] = useSound("/sounds/notification.mp3", { volume: 0.5 });
+  const [playChord] = useSound("/sounds/chord.mp3", { volume: 0.5 });
+
+  const playCurrentSound = () => {
+    if (selectedSound === "notification") playNotification();
+    if (selectedSound === "chord") playChord();
+  };
+
+  const handleSoundChange = (sound: "notification" | "chord" | "none") => {
+    setSelectedSound(sound);
+    localStorage.setItem("fids-sound", sound);
+    setIsSoundMenuOpen(false);
+    if (sound === "notification") playNotification();
+    if (sound === "chord") playChord();
+  };
 
   const fetchEvents = async () => {
     if (status !== "authenticated") return;
@@ -53,27 +76,24 @@ export default function Dashboard() {
     try {
       const res = await fetch("/api/calendar");
       if (res.ok) {
+        setErrorMsg(null);
         const data = await res.json();
         
-        // Filtramos estrictamente los eventos que suceden "hoy" según la zona horaria del usuario
-        const todayStr = new Date().toDateString();
-        const todaysEvents = data.filter((e: CalendarEvent) => {
-          const startStr = new Date(e.startTimeIso).toDateString();
-          return startStr === todayStr;
-        });
-
-        // Recalculamos isMain por si el primer evento de la lista general no era de hoy
-        const finalEvents = todaysEvents.map((e: CalendarEvent, i: number) => ({
+        // Recalculamos isMain por seguridad
+        const finalEvents = data.map((e: CalendarEvent, i: number) => ({
           ...e,
           isMain: i === 0
         }));
 
-        // Eliminado playChime de aquí, se maneja en un useEffect separado
+        setEvents(finalEvents);
       } else {
-        console.error("Failed to fetch events");
+        const errText = await res.text();
+        console.error("Failed to fetch events", errText);
+        setErrorMsg(`Error del servidor: ${res.status} ${errText}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching events:", error);
+      setErrorMsg(error?.message || "Error desconocido al conectar con API");
     } finally {
       setLoading(false);
     }
@@ -97,14 +117,14 @@ export default function Dashboard() {
     
     // Si ya teníamos un evento anterior, y el nuevo es distinto, tocamos la campana
     if (prevMainEventIdRef.current !== null && currentId !== null && prevMainEventIdRef.current !== currentId) {
-      playChime();
+      playCurrentSound();
     }
     
     // Actualizamos la referencia
     if (currentId !== null) {
       prevMainEventIdRef.current = currentId;
     }
-  }, [events, playChime]);
+  }, [events, selectedSound, playNotification, playChord]);
 
   if (status === "loading") {
     return <div className={`min-h-screen flex items-center justify-center text-3xl font-bold ${theme.textPrimary}`}>Cargando FIDS...</div>;
@@ -203,6 +223,55 @@ export default function Dashboard() {
       {/* Estética futurista de fondo (solo en Modern) */}
       {themeName === "MODERN" && <FloatingShapes />}
 
+      {/* Theme Selector - Bottom Right */}
+      <div className="absolute bottom-6 right-6 z-20 hidden md:block">
+        <ThemeSelector />
+      </div>
+
+      {/* Sound Selector - Bottom Left */}
+      <div className="absolute bottom-6 left-6 z-30 hidden md:block">
+        <div className="relative">
+          <AnimatePresence>
+            {isSoundMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className={`absolute bottom-16 left-0 w-48 rounded-xl shadow-xl border overflow-hidden ${theme.cardBg} ${theme.border} backdrop-blur-xl`}
+              >
+                <div className="flex flex-col p-2 gap-1">
+                  <button
+                    onClick={() => handleSoundChange("notification")}
+                    className={`px-4 py-2 text-left rounded-lg transition-colors font-medium ${selectedSound === "notification" ? "bg-cyan-500/20 text-cyan-400" : `hover:bg-white/10 ${theme.textSecondary}`}`}
+                  >
+                    Notification (Futurista)
+                  </button>
+                  <button
+                    onClick={() => handleSoundChange("chord")}
+                    className={`px-4 py-2 text-left rounded-lg transition-colors font-medium ${selectedSound === "chord" ? "bg-cyan-500/20 text-cyan-400" : `hover:bg-white/10 ${theme.textSecondary}`}`}
+                  >
+                    Chord (Arpa)
+                  </button>
+                  <button
+                    onClick={() => handleSoundChange("none")}
+                    className={`px-4 py-2 text-left rounded-lg transition-colors font-medium ${selectedSound === "none" ? "bg-red-500/20 text-red-400" : `hover:bg-white/10 ${theme.textSecondary}`}`}
+                  >
+                    Silenciar
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <button
+            onClick={() => setIsSoundMenuOpen(!isSoundMenuOpen)}
+            className={`p-3 rounded-full border shadow-lg transition-all flex items-center justify-center gap-2 ${isSoundMenuOpen ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400" : `${theme.cardBg} ${theme.border} ${theme.textSecondary} hover:${theme.textPrimary} hover:border-white/30`}`}
+            title="Sonido de Notificación"
+          >
+            <Music size={20} />
+          </button>
+        </div>
+      </div>
+
       {/* Top left controls */}
       <div className="absolute top-6 left-6 z-20">
         <button 
@@ -276,7 +345,18 @@ export default function Dashboard() {
 
         <main className="flex flex-col gap-6">
           <AnimatePresence mode="popLayout">
-            {events.length === 0 && !loading && (
+            {errorMsg && !loading && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="text-red-500 text-center text-xl font-bold py-10 border border-red-500/50 rounded-2xl bg-white/30 backdrop-blur-[40px] shadow-xl"
+              >
+                Error: {errorMsg}
+              </motion.div>
+            )}
+
+            {events.length === 0 && !loading && !errorMsg && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -301,7 +381,7 @@ export default function Dashboard() {
               />
             )}
 
-            {/* Separador brillante */}
+            {/* Separador brillante debajo del evento principal */}
             {mainEvent && (
                <motion.div 
                  initial={{ scaleX: 0 }} 
@@ -311,17 +391,53 @@ export default function Dashboard() {
                />
             )}
 
-            {smallEvents.map((event, index) => (
-              <SmallEventCard
-                key={event.id}
-                index={index}
-                title={event.title}
-                time={event.time}
-                startTimeIso={event.startTimeIso}
-                calendarName={event.calendarName}
-                calendarColor={event.calendarColor}
-              />
-            ))}
+            {(() => {
+              const nodes: React.ReactNode[] = [];
+              let lastDateStr = mainEvent 
+                  ? new Date(mainEvent.startTimeIso).toDateString()
+                  : "";
+
+              smallEvents.forEach((event, index) => {
+                const eventDate = new Date(event.startTimeIso);
+                const eventDateStr = eventDate.toDateString();
+                
+                // Si la fecha del evento actual es distinta a la anterior, agregamos un divisor
+                if (eventDateStr !== lastDateStr) {
+                  let dateLabel = format(eventDate, "EEEE d 'de' MMMM", { locale: es });
+                  if (isToday(eventDate)) dateLabel = "Hoy";
+                  else if (isTomorrow(eventDate)) dateLabel = "Mañana";
+
+                  nodes.push(
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      key={`divider-${eventDateStr}`} 
+                      className={`w-full flex items-center gap-4 my-2 ${theme.textSecondary}`}
+                    >
+                      <div className="h-px bg-current flex-1 opacity-20"></div>
+                      <span className="text-sm md:text-base font-bold tracking-widest uppercase">{dateLabel}</span>
+                      <div className="h-px bg-current flex-1 opacity-20"></div>
+                    </motion.div>
+                  );
+                  lastDateStr = eventDateStr;
+                }
+
+                // Agregamos la tarjeta del evento
+                nodes.push(
+                  <SmallEventCard
+                    key={event.id}
+                    index={index}
+                    title={event.title}
+                    time={event.time}
+                    startTimeIso={event.startTimeIso}
+                    calendarName={event.calendarName}
+                    calendarColor={event.calendarColor}
+                  />
+                );
+              });
+
+              return nodes;
+            })()}
           </AnimatePresence>
         </main>
       </div>
