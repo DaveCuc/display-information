@@ -96,7 +96,7 @@ export default function Dashboard() {
                 </svg>
               </div>
               <h1 className="text-5xl md:text-6xl font-black tracking-tight text-slate-800">
-                Display Info
+                Display Information
               </h1>
             </div>
 

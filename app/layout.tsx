@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FIDS Calendar Dashboard",
-  description: "Display Google Calendar events in FIDS format",
+  title: "Display Information",
+  description: "Display Google Calendar events in an immersive format",
 };
 
 export default function RootLayout({
