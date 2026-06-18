@@ -21,6 +21,8 @@ interface CalendarEvent {
   startTimeIso: string;
   endTimeIso: string;
   isMain: boolean;
+  calendarName?: string;
+  calendarColor?: string;
 }
 
 export default function Dashboard() {
@@ -256,6 +258,8 @@ export default function Dashboard() {
                 remainingTime={mainEvent.remainingTime}
                 startTimeIso={mainEvent.startTimeIso}
                 endTimeIso={mainEvent.endTimeIso}
+                calendarName={mainEvent.calendarName}
+                calendarColor={mainEvent.calendarColor}
               />
             )}
 
@@ -276,6 +280,8 @@ export default function Dashboard() {
                 title={event.title}
                 time={event.time}
                 startTimeIso={event.startTimeIso}
+                calendarName={event.calendarName}
+                calendarColor={event.calendarColor}
               />
             ))}
           </AnimatePresence>

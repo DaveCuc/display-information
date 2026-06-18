@@ -11,9 +11,11 @@ interface SmallEventCardProps {
   time: string; // Failsafe
   startTimeIso?: string;
   index?: number;
+  calendarName?: string;
+  calendarColor?: string;
 }
 
-export default function SmallEventCard({ title, time, startTimeIso, index = 0 }: SmallEventCardProps) {
+export default function SmallEventCard({ title, time, startTimeIso, index = 0, calendarName, calendarColor }: SmallEventCardProps) {
   const { theme, themeName, is24Hour } = useTheme();
 
   const isAirplane = themeName === "AIRPLANE";
@@ -71,6 +73,14 @@ export default function SmallEventCard({ title, time, startTimeIso, index = 0 }:
             <h3 className={`text-2xl md:text-3xl font-bold truncate ${theme.textPrimary}`}>
               {title}
             </h3>
+          )}
+          
+          {/* Calendar Badge */}
+          {calendarName && calendarColor && (
+            <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shadow-sm" style={{ borderColor: calendarColor, backgroundColor: `${calendarColor}15` }}>
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: calendarColor, boxShadow: `0 0 5px ${calendarColor}` }} />
+              <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: calendarColor }}>{calendarName}</span>
+            </div>
           )}
           
           {/* Failsafe for description if added later */}

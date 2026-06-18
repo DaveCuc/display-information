@@ -14,9 +14,11 @@ interface MainEventCardProps {
   remainingTime: string; // Failsafe
   startTimeIso?: string;
   endTimeIso?: string;
+  calendarName?: string;
+  calendarColor?: string;
 }
 
-export default function MainEventCard({ title, description, time, remainingTime, startTimeIso, endTimeIso }: MainEventCardProps) {
+export default function MainEventCard({ title, description, time, remainingTime, startTimeIso, endTimeIso, calendarName, calendarColor }: MainEventCardProps) {
   const { theme, themeName, is24Hour } = useTheme();
   const [dynamicTime, setDynamicTime] = useState(remainingTime);
 
@@ -130,6 +132,13 @@ export default function MainEventCard({ title, description, time, remainingTime,
 
       <div className="flex-1 p-8 md:p-12 relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center">
         <div className="flex-1 max-w-full overflow-hidden">
+          {calendarName && calendarColor && (
+            <div className="mb-3 inline-flex items-center gap-2 px-2.5 py-1 rounded-md border shadow-sm" style={{ borderColor: calendarColor, backgroundColor: `${calendarColor}15` }}>
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: calendarColor, boxShadow: `0 0 8px ${calendarColor}` }} />
+              <span className="text-xs font-bold tracking-widest uppercase" style={{ color: calendarColor }}>{calendarName}</span>
+            </div>
+          )}
+          
           {isAirplane ? (
             <div className="mb-4 overflow-hidden w-full max-w-[60vw]">
                <SplitFlap value={title.toUpperCase()} size="sm" color="dark" />
