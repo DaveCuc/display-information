@@ -109,6 +109,12 @@ export default function Dashboard() {
   // Efecto para auto-recargar cada minuto
   useEffect(() => {
     if (status === "authenticated") {
+      // Si NextAuth falló al rotar el token, obligamos a re-autenticar
+      if ((session as any)?.error === "RefreshAccessTokenError") {
+        signIn("google");
+        return;
+      }
+      
       fetchEvents();
       // Refrescar automáticamente cada hora (3600000 ms)
       const interval = setInterval(() => {
