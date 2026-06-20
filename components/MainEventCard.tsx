@@ -51,7 +51,7 @@ export default function MainEventCard({ title, description, time, remainingTime,
           // Toggle every 5 seconds (5000ms)
           const isShowingInCourse = Math.floor(now.getTime() / 5000) % 2 === 0;
           if (isShowingInCourse) {
-            setDynamicTime("¡EN CURSO!");
+            setDynamicTime("EN CURSO");
           } else {
             const diffEndSecs = Math.floor(diffEndMs / 1000);
             const h = Math.floor(diffEndSecs / 3600);
@@ -59,8 +59,7 @@ export default function MainEventCard({ title, description, time, remainingTime,
             const s = diffEndSecs % 60;
             setDynamicTime(`Fin: ${pad(h)}:${pad(m)}:${pad(s)}`);
           }
-        } else {
-          setDynamicTime("¡EN CURSO!");
+          setDynamicTime("EN CURSO");
         }
         return;
       }
@@ -91,6 +90,15 @@ export default function MainEventCard({ title, description, time, remainingTime,
   const isMetro = themeName === "METRO";
 
   const isModern = themeName === "MODERN";
+  const isEnCurso = dynamicTime === "EN CURSO";
+
+  // Componente reutilizable para el botón "Live"
+  const LiveBadge = () => (
+    <div className="flex items-center gap-2 bg-red-600/20 border border-red-500/50 text-red-500 px-3 py-1 rounded-lg shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+      <span className="font-bold tracking-widest uppercase text-lg md:text-xl">EN CURSO</span>
+    </div>
+  );
 
   return (
     <motion.div 
@@ -123,16 +131,15 @@ export default function MainEventCard({ title, description, time, remainingTime,
         <div className={`${theme.sidebarColor} w-full md:w-64 p-8 flex flex-col justify-center items-center text-white shrink-0`}>
           <div className="text-sm font-bold tracking-widest uppercase mb-1">Hora Local</div>
           <div className="text-5xl md:text-6xl font-black mb-8">{displayTime}</div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold uppercase">Puerta</span>
-            <span className="text-5xl font-black">14</span>
+          <div className="w-full text-2xl md:text-3xl font-black text-center break-words overflow-hidden line-clamp-3 leading-tight px-2">
+            {calendarName || "Terminal"}
           </div>
         </div>
       )}
 
       <div className="flex-1 p-8 md:p-12 relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center">
         <div className="flex-1 max-w-full overflow-hidden">
-          {calendarName && calendarColor && (
+          {calendarName && calendarColor && !isMetro && !isBus && (
             <div className="mb-3 inline-flex items-center gap-2 px-2.5 py-1 rounded-md border shadow-sm" style={{ borderColor: calendarColor, backgroundColor: `${calendarColor}15` }}>
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: calendarColor, boxShadow: `0 0 8px ${calendarColor}` }} />
               <span className="text-xs font-bold tracking-widest uppercase" style={{ color: calendarColor }}>{calendarName}</span>
@@ -180,7 +187,9 @@ export default function MainEventCard({ title, description, time, remainingTime,
             )}
             
             <div className={`text-2xl md:text-3xl font-bold ${theme.textAccentSecondary} mt-4 uppercase tracking-widest ${theme.glow} relative overflow-hidden h-[40px] md:h-[48px] flex items-center justify-end w-full min-w-[200px]`}>
-              {isAirplane ? (
+              {isEnCurso ? (
+                 <LiveBadge />
+              ) : isAirplane ? (
                  <SplitFlap value={dynamicTime.toUpperCase()} size="sm" color="dark" />
               ) : (
                 <AnimatePresence mode="popLayout">
@@ -211,21 +220,27 @@ export default function MainEventCard({ title, description, time, remainingTime,
         {/* BUS: Remaining time inside, local time on the left sidebar */}
         {isBus && (
           <div className="flex flex-col items-end mt-8 md:mt-0 md:ml-12 text-right shrink-0">
-             <div className={`text-2xl font-bold text-gray-500 uppercase tracking-widest`}>
-                {dynamicTime}
-             </div>
+             {isEnCurso ? (
+               <LiveBadge />
+             ) : (
+               <div className={`text-2xl font-bold text-gray-500 uppercase tracking-widest`}>
+                  {dynamicTime}
+               </div>
+             )}
           </div>
         )}
       </div>
 
       {/* METRO Sidebar (Derecha - Estilo Flinders) */}
       {isMetro && (
-        <div className={`${theme.sidebarColor} w-full md:w-56 p-8 flex flex-col justify-center items-center text-white shrink-0`}>
-           <div className="text-sm font-bold uppercase mb-1 text-white/80">Plat</div>
-           <div className="text-6xl font-black mb-8">1</div>
+        <div 
+          className={`${theme.sidebarColor} w-full md:w-56 p-8 flex flex-col justify-center items-center text-white shrink-0`}
+          style={calendarColor ? { backgroundColor: calendarColor } : undefined}
+        >
+           <div className="w-full text-2xl md:text-3xl font-black mb-8 text-center px-4 break-words overflow-hidden line-clamp-3 leading-tight">{calendarName || "Metro"}</div>
            <div className="text-sm font-bold uppercase mb-1 text-white/80">Estado</div>
-           <div className="text-2xl font-bold text-center leading-tight">
-             {dynamicTime}
+           <div className="text-2xl font-bold text-center leading-tight flex justify-center w-full">
+             {isEnCurso ? <LiveBadge /> : dynamicTime}
            </div>
         </div>
       )}

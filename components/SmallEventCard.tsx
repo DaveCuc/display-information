@@ -58,6 +58,9 @@ export default function SmallEventCard({ title, time, startTimeIso, index = 0, c
       {/* BUS Sidebar (Izquierda) */}
       {isBus && (
         <div className={`${theme.sidebarColor} w-24 md:w-32 p-4 flex flex-col justify-center items-center text-white shrink-0`}>
+          <div className="w-full text-xs md:text-sm font-black text-center break-words overflow-hidden line-clamp-2 leading-tight px-1 mb-2 opacity-80 uppercase tracking-wider">
+            {calendarName || "Terminal"}
+          </div>
           <div className="text-xl md:text-3xl font-black">{displayTime}</div>
         </div>
       )}
@@ -76,7 +79,7 @@ export default function SmallEventCard({ title, time, startTimeIso, index = 0, c
           )}
           
           {/* Calendar Badge */}
-          {calendarName && calendarColor && (
+          {calendarName && calendarColor && !isMetro && !isBus && (
             <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded border shadow-sm" style={{ borderColor: calendarColor, backgroundColor: `${calendarColor}15` }}>
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: calendarColor, boxShadow: `0 0 5px ${calendarColor}` }} />
               <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: calendarColor }}>{calendarName}</span>
@@ -110,9 +113,11 @@ export default function SmallEventCard({ title, time, startTimeIso, index = 0, c
 
       {/* METRO Sidebar (Derecha) */}
       {isMetro && (
-        <div className={`${theme.sidebarColor} w-24 md:w-32 p-4 flex flex-col justify-center items-center text-white shrink-0`}>
-           <div className="text-xs font-bold uppercase mb-1 text-white/80">Plat</div>
-           <div className="text-3xl font-black">{index + 2}</div>
+        <div 
+           className={`${theme.sidebarColor} w-24 md:w-32 p-4 flex flex-col justify-center items-center text-white shrink-0`}
+           style={calendarColor ? { backgroundColor: calendarColor } : undefined}
+        >
+           <div className="w-full text-base md:text-lg font-black text-center leading-tight line-clamp-2 px-2 break-words overflow-hidden">{calendarName || "Metro"}</div>
         </div>
       )}
     </motion.div>
