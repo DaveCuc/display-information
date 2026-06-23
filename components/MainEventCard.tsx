@@ -44,7 +44,7 @@ export default function MainEventCard({ title, description, time, remainingTime,
           }
           
           if (diffEndMs <= 60000) {
-            setDynamicTime("¡FINALIZANDO!");
+            setDynamicTime("FINALIZANDO");
             return;
           }
           
@@ -59,6 +59,7 @@ export default function MainEventCard({ title, description, time, remainingTime,
             const s = diffEndSecs % 60;
             setDynamicTime(`Fin: ${pad(h)}:${pad(m)}:${pad(s)}`);
           }
+        } else {
           setDynamicTime("EN CURSO");
         }
         return;
@@ -91,12 +92,20 @@ export default function MainEventCard({ title, description, time, remainingTime,
 
   const isModern = themeName === "MODERN";
   const isEnCurso = dynamicTime === "EN CURSO";
+  const isFinalizando = dynamicTime === "FINALIZANDO";
 
   // Componente reutilizable para el botón "Live"
   const LiveBadge = () => (
     <div className="flex items-center gap-2 bg-red-600/20 border border-red-500/50 text-red-500 px-3 py-1 rounded-lg shadow-[0_0_15px_rgba(239,68,68,0.3)]">
       <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
       <span className="font-bold tracking-widest uppercase text-lg md:text-xl">EN CURSO</span>
+    </div>
+  );
+
+  // Componente para estado crítico (último minuto)
+  const FinishingBadge = () => (
+    <div className="flex items-center gap-2 bg-red-600/30 border border-red-500/80 text-red-500 px-3 py-1 rounded-lg shadow-[0_0_20px_rgba(239,68,68,0.5)] animate-pulse">
+      <span className="font-black tracking-widest uppercase text-lg md:text-xl">FINALIZANDO</span>
     </div>
   );
 
@@ -187,14 +196,40 @@ export default function MainEventCard({ title, description, time, remainingTime,
             )}
             
             <div className={`text-2xl md:text-3xl font-bold ${theme.textAccentSecondary} mt-4 uppercase tracking-widest ${theme.glow} relative overflow-hidden h-[40px] md:h-[48px] flex items-center justify-end w-full min-w-[200px]`}>
-              {isEnCurso ? (
-                 <LiveBadge />
-              ) : isAirplane ? (
-                 <SplitFlap value={dynamicTime.toUpperCase()} size="sm" color="dark" />
-              ) : (
-                <AnimatePresence mode="popLayout">
+              <AnimatePresence mode="popLayout">
+                {isEnCurso ? (
                   <motion.div
-                    key={dynamicTime.split(":")[0]}
+                    key="live-badge"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <LiveBadge />
+                  </motion.div>
+                ) : isFinalizando ? (
+                  <motion.div
+                    key="finishing-badge"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <FinishingBadge />
+                  </motion.div>
+                ) : isAirplane ? (
+                  <motion.div
+                    key="split-flap"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <SplitFlap value={dynamicTime.toUpperCase()} size="sm" color="dark" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={dynamicTime.split(":")[0]} // This triggers animation on hour/min change or text change
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -20, opacity: 0 }}
@@ -202,8 +237,8 @@ export default function MainEventCard({ title, description, time, remainingTime,
                   >
                     {dynamicTime}
                   </motion.div>
-                </AnimatePresence>
-              )}
+                )}
+              </AnimatePresence>
             </div>
           </div>
         )}
@@ -219,14 +254,41 @@ export default function MainEventCard({ title, description, time, remainingTime,
         
         {/* BUS: Remaining time inside, local time on the left sidebar */}
         {isBus && (
-          <div className="flex flex-col items-end mt-8 md:mt-0 md:ml-12 text-right shrink-0">
-             {isEnCurso ? (
-               <LiveBadge />
-             ) : (
-               <div className={`text-2xl font-bold text-gray-500 uppercase tracking-widest`}>
+          <div className="flex flex-col items-end mt-8 md:mt-0 md:ml-12 text-right shrink-0 h-[40px] overflow-hidden justify-center relative">
+            <AnimatePresence mode="popLayout">
+              {isEnCurso ? (
+                <motion.div
+                  key="bus-live"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <LiveBadge />
+                </motion.div>
+              ) : isFinalizando ? (
+                <motion.div
+                  key="bus-finish"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <FinishingBadge />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="bus-time"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-2xl font-bold text-gray-500 uppercase tracking-widest"
+                >
                   {dynamicTime}
-               </div>
-             )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </div>
@@ -239,8 +301,40 @@ export default function MainEventCard({ title, description, time, remainingTime,
         >
            <div className="w-full text-2xl md:text-3xl font-black mb-8 text-center px-4 break-words overflow-hidden line-clamp-3 leading-tight">{calendarName || "Metro"}</div>
            <div className="text-sm font-bold uppercase mb-1 text-white/80">Estado</div>
-           <div className="text-2xl font-bold text-center leading-tight flex justify-center w-full">
-             {isEnCurso ? <LiveBadge /> : dynamicTime}
+           <div className="text-2xl font-bold text-center leading-tight flex justify-center w-full h-[40px] overflow-hidden relative items-center">
+             <AnimatePresence mode="popLayout">
+               {isEnCurso ? (
+                 <motion.div
+                   key="metro-live"
+                   initial={{ y: 20, opacity: 0 }}
+                   animate={{ y: 0, opacity: 1 }}
+                   exit={{ y: -20, opacity: 0 }}
+                   transition={{ duration: 0.4 }}
+                 >
+                   <LiveBadge />
+                 </motion.div>
+               ) : isFinalizando ? (
+                 <motion.div
+                   key="metro-finish"
+                   initial={{ scale: 0.8, opacity: 0 }}
+                   animate={{ scale: 1, opacity: 1 }}
+                   exit={{ scale: 0.8, opacity: 0 }}
+                   transition={{ duration: 0.4 }}
+                 >
+                   <FinishingBadge />
+                 </motion.div>
+               ) : (
+                 <motion.div
+                   key="metro-time"
+                   initial={{ y: 20, opacity: 0 }}
+                   animate={{ y: 0, opacity: 1 }}
+                   exit={{ y: -20, opacity: 0 }}
+                   transition={{ duration: 0.4 }}
+                 >
+                   {dynamicTime}
+                 </motion.div>
+               )}
+             </AnimatePresence>
            </div>
         </div>
       )}
